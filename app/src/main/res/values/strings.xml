@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">LightHub</string>
+    <string name="textView">TextView</string>
+    <string name="title_activity_login">Sign in</string>
+    <string name="title_activity_search">Search</string>
+
+    <!-- Strings related to Login -->
+    <string name="prompt_login">Login</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+
+    <!-- Strings related to Buttons and Menus -->
+    <string name="button_search">Search</string>
+    <string name="button_logout">Logout</string>
+    <string name="button_refresh">Refresh</string>
+    <string name="button_exit">Exit</string>
+    <string name="search_github">Search GitHub</string>
+    <string name="sort_stars">Sort by stars</string>
+    <string name="sort_forks">Sort by forks</string>
+    <string name="sort_updated">Sort by updated</string>
+    <string name="order_asc">Ascending</string>
+    <string name="order_desc">Descending</string>
+    <string name="nothing_found">Nothing found</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="unauthorized">Unauthorized</string>
+    <string name="get_access">Authenticate</string>
+    <string name="git_avatar">avatar_url</string>
+
+    <!--GitHub URLS-->
+    <string name="git_main_url">https://api.github.com/user</string>
+    <string name="git_repos_url">https://api.github.com/user/repos</string>
+    <string name="git_search_url">https://api.github.com/search/repositories?q=</string>
+</resources>
