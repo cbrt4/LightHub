@@ -2,9 +2,8 @@ package com.alex.lighthub.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v7.app.AppCompatActivity;
-
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.view.KeyEvent;
@@ -14,14 +13,12 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.alex.lighthub.R;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText loginView, passwordView;
-    private SharedPreferences sharedPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,9 +78,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void authenticate(String login, String password) {
-        String authenticator = "Basic " + Base64.encodeToString((login + ":" + password).getBytes(), Base64.NO_WRAP);
-        sharedPrefs = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPrefs.edit();
+        String authenticator = "Basic " + Base64.encodeToString((login + ":" + password).getBytes(),
+                Base64.NO_WRAP);
+        SharedPreferences.Editor editor =
+                getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE).edit();
         editor.putString(getString(R.string.get_access), authenticator).apply();
     }
 

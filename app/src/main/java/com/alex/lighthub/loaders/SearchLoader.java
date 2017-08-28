@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -18,7 +17,6 @@ public class SearchLoader extends AsyncTaskLoader<String> {
 
     private String searchQuery;
     private String searchUrl;
-    public static final String SORT = "sort", ORDER = "order";
 
     public SearchLoader(Context context, String searchQuery, String searchUrl) {
         super(context);
@@ -43,7 +41,7 @@ public class SearchLoader extends AsyncTaskLoader<String> {
         } catch (UnknownHostException e) {
             return this.getContext().getString(R.string.no_internet_connection);
         } catch (IOException e) {
-            return "";
+            return null;
         }
         return response;
     }

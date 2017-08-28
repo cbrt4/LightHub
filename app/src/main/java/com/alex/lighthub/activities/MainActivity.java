@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private Animation alphaAppear, scaleExpand;
     private ImageView avatar;
-    private TextView name, login, location, noInternetConnection;
+    private TextView name, login, location;
     private ListView repos;
     private ProgressBar loadingProgress;
     private String credentials;
@@ -67,18 +67,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         loadingProgress = (ProgressBar) findViewById(R.id.loading_progress);
         loadingProgress.setVisibility(View.GONE);
 
-        noInternetConnection = (TextView) findViewById(R.id.no_internet_connection);
-        noInternetConnection.setVisibility(View.GONE);
-        noInternetConnection.setText("No internet Connection.\nTap to try again.");
-        noInternetConnection.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                load();
-            }
-        });
-
-        if (responseContainer != null) getData(responseContainer);
-        else load();
+        if (responseContainer == null) load();
     }
 
     @Override
@@ -146,6 +135,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             else if (response.getError().equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
             } else {
+                responseContainer = response;
+
                 JSONObject responseJSON = new JSONObject(response.getInfo());
 
                 name.setText(responseJSON.getString("name") != null ?

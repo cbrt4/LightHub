@@ -7,8 +7,6 @@ import android.content.Loader;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -39,8 +37,7 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     private TextView nothingFound;
     private EditText searchQuery;
     private ListView searchResults;
-    private String searchResultsContainer;
-    private static final String CONTAINER = "container";
+    private static final String QUERY_CONTAINER = "queryContainer";
     private static final int SEARCH_LOADER_ID = 1;
 
     @Override
@@ -87,23 +84,7 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
 
         searchResults = (ListView) findViewById(R.id.search_results);
 
-        if (searchResultsContainer != null) getData(searchResultsContainer);
-        else search();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putString(CONTAINER, searchResultsContainer);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (savedInstanceState.getString(CONTAINER) != null) {
-            searchResultsContainer = savedInstanceState.getString(CONTAINER);
-            getData(searchResultsContainer);
-        }
+        search();
     }
 
     @Override
@@ -113,12 +94,16 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
 
     private void search() {
         nothingFound.setVisibility(View.GONE);
-        getLoaderManager().initLoader(SEARCH_LOADER_ID, Bundle.EMPTY, this).forceLoad();
+        getLoaderManager().initLoader(SEARCH_LOADER_ID, Bundle.EMPTY, this);
     }
 
     private void getData(String response) {
         try {
-            if (response.equals(getString(R.string.no_internet_connection))) {
+            if (response == null) {
+                searchResults.setAdapter(null);
+                nothingFound.setVisibility(View.VISIBLE);
+                nothingFound.setAnimation(alphaAppear);
+            } else if (response.equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
             } else {
                 JSONArray repoArray = new JSONArray(new JSONObject(response).getString("items"));
@@ -146,12 +131,9 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
                         new String[]{"name", "description"},
                         new int[]{R.id.repo_name, R.id.repo_description}));
                 searchResults.setAnimation(alphaAppear);
-
             }
         } catch (JSONException e) {
-            searchResults.setAdapter(null);
-            nothingFound.setVisibility(View.VISIBLE);
-            nothingFound.setAnimation(alphaAppear);
+            Toast.makeText(this, e.toString() + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -165,7 +147,6 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     @Override
     public void onLoadFinished(Loader<String> loader, String response) {
         getData(response);
-        searchResultsContainer = response;
         getLoaderManager().destroyLoader(loader.getId());
         searchProgress.setVisibility(View.GONE);
     }
