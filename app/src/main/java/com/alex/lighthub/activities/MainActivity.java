@@ -67,7 +67,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         loadingProgress = (ProgressBar) findViewById(R.id.loading_progress);
         loadingProgress.setVisibility(View.GONE);
 
-        if (responseContainer == null) load();
+        if (savedInstanceState != null && savedInstanceState.getParcelable(CONTAINER) != null) {
+            responseContainer = savedInstanceState.getParcelable(CONTAINER);
+            getData(responseContainer);
+        } else load();
     }
 
     @Override
@@ -104,15 +107,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putParcelable(CONTAINER, responseContainer);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (savedInstanceState.getParcelable(CONTAINER) != null) {
-            responseContainer = savedInstanceState.getParcelable(CONTAINER);
-            getData(responseContainer);
-        }
     }
 
     @Override

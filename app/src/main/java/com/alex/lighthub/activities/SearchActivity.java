@@ -37,7 +37,8 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     private TextView nothingFound;
     private EditText searchQuery;
     private ListView searchResults;
-    private static final String QUERY_CONTAINER = "queryContainer";
+    private String resultContainer;
+    private static final String RESULT_CONTAINER = "resultContainer";
     private static final int SEARCH_LOADER_ID = 1;
 
     @Override
@@ -84,7 +85,16 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
 
         searchResults = (ListView) findViewById(R.id.search_results);
 
-        search();
+        if (savedInstanceState != null && savedInstanceState.getString(RESULT_CONTAINER) != null) {
+            resultContainer = savedInstanceState.getString(RESULT_CONTAINER);
+            getData(resultContainer);
+        } else search();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putString(RESULT_CONTAINER, resultContainer);
     }
 
     @Override
@@ -106,6 +116,8 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
             } else if (response.equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
             } else {
+                resultContainer = response;
+
                 JSONArray repoArray = new JSONArray(new JSONObject(response).getString("items"));
                 List<HashMap<String, String>> repoList = new ArrayList<>();
                 JSONObject repository;
