@@ -54,12 +54,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         avatar = (ImageView) findViewById(R.id.avatar);
         name = (TextView) findViewById(R.id.name);
-        name.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                load();
-            }
-        });
         login = (TextView) findViewById(R.id.login);
         location = (TextView) findViewById(R.id.location);
         repos = (ListView) findViewById(R.id.repos);

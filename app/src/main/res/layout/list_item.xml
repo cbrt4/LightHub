@@ -8,8 +8,8 @@
         android:id="@+id/repo_name"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="8dp"
         android:textColor="@color/colorAccent"
         android:textSize="18sp"
@@ -20,8 +20,8 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:paddingBottom="8dp"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
         android:textColor="@color/textColorLogin"
         android:textSize="14sp" />
 </LinearLayout>

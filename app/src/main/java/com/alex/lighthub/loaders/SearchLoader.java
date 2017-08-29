@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -17,11 +18,14 @@ public class SearchLoader extends AsyncTaskLoader<String> {
 
     private String searchQuery;
     private String searchUrl;
+    private HashMap<String, String> searchParameters;
+    public static final String PAGE = "page", PER_PAGE = "per_page", SORT = "sort", ORDER = "order";
 
-    public SearchLoader(Context context, String searchQuery, String searchUrl) {
+    public SearchLoader(Context context, String searchQuery, String searchUrl, HashMap<String, String> searchParemeters) {
         super(context);
         this.searchQuery = searchQuery;
         this.searchUrl = searchUrl;
+        this.searchParameters = searchParemeters;
     }
 
     @Override
@@ -57,6 +61,11 @@ public class SearchLoader extends AsyncTaskLoader<String> {
     }
 
     private String getSearchURL() {
-        return this.searchUrl + this.searchQuery;
+        return this.searchUrl +
+                this.searchQuery +
+                "&" + PAGE + "=" + searchParameters.get(PAGE) +
+                "&" + PER_PAGE + "=" + searchParameters.get(PER_PAGE) +
+                "&" + SORT + "=" + searchParameters.get(SORT) +
+                "&" + ORDER + "=" + searchParameters.get(ORDER);
     }
 }

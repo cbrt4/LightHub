@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/sort_stars_asc"
+        android:title="@string/sort_stars_asc" />
+    <item
+        android:id="@+id/sort_stars_desc"
+        android:title="@string/sort_stars_desc" />
+    <item
+        android:id="@+id/sort_forks_asc"
+        android:title="@string/sort_forks_asc" />
+    <item
+        android:id="@+id/sort_forks_desc"
+        android:title="@string/sort_stars_desc" />
+    <item
+        android:id="@+id/sort_updated_asc"
+        android:title="@string/sort_updated_asc" />
+    <item
+        android:id="@+id/sort_updated_desc"
+        android:title="@string/sort_updated_desc" />
+    <item
+        android:id="@+id/exit"
+        android:title="@string/button_exit" />
+
+</menu>
