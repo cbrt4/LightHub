@@ -33,7 +33,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SearchActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String> {
+public class SearchActivity extends AppCompatActivity
+        implements LoaderManager.LoaderCallbacks<String>, View.OnClickListener {
 
     private Animation alphaAppear, scaleExpand;
     private ProgressBar searchProgress;
@@ -42,10 +43,11 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     private ListView searchResults;
     private LinearLayout pageNavigator;
     private TextView pageCounter;
-    private Button buttonFirst, buttonPrevious, buttonNext, buttonLast;
-    private HashMap<String, String> searchParameters;
+    private Button searchButton, buttonFirst, buttonPrevious, buttonNext, buttonLast;
+    private String responseContainer;
+    private static HashMap<String, String> searchParameters;
     private static final String STARS = "stars", FORKS = "forks", UPDATED = "updated";
-    private static final String ASCENDING = "asc", DESCENDING = "desc";
+    private static final String ASCENDING = "asc", DESCENDING = "desc", CONTAINER = "cont";
     private static int TOTAL_COUNT, PER_PAGE, CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
     private static final int SEARCH_LOADER_ID = 1;
 
@@ -83,64 +85,21 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
             }
         });
 
-        Button searchButton = (Button) findViewById(R.id.go);
-        searchButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                searchParameters = new HashMap<>();
-                searchParameters.put(SearchLoader.PAGE, "1");
-                searchParameters.put(SearchLoader.PER_PAGE, "100");
-                search();
-                InputMethodManager inputManager =
-                        (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
-            }
-        });
-
         searchResults = (ListView) findViewById(R.id.search_results);
-
         pageNavigator = (LinearLayout) findViewById(R.id.page_navigator);
         pageNavigator.setVisibility(View.GONE);
-
         pageCounter = (TextView) findViewById(R.id.page_counter);
 
+        searchButton = (Button) findViewById(R.id.go);
+        searchButton.setOnClickListener(this);
         buttonFirst = (Button) findViewById(R.id.button_first);
-        buttonFirst.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
-                search();
-            }
-        });
-
+        buttonFirst.setOnClickListener(this);
         buttonPrevious = (Button) findViewById(R.id.button_previous);
-        buttonPrevious.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE - 1));
-                search();
-            }
-        });
-
+        buttonPrevious.setOnClickListener(this);
         buttonNext = (Button) findViewById(R.id.button_next);
-        buttonNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE + 1));
-                search();
-            }
-        });
-
+        buttonNext.setOnClickListener(this);
         buttonLast = (Button) findViewById(R.id.button_last);
-        buttonLast.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(LAST_PAGE));
-                search();
-            }
-        });
+        buttonLast.setOnClickListener(this);
 
         searchParameters = new HashMap<>();
         searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
@@ -148,11 +107,7 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
         searchParameters.put(SearchLoader.SORT, "");
         searchParameters.put(SearchLoader.ORDER, "");
 
-        try {
-            search();
-        } catch (Exception e) {
-            Toast.makeText(this, e.toString() + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        search();
     }
 
     @Override
@@ -218,6 +173,7 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     private void search() {
         nothingFound.setVisibility(View.GONE);
         getLoaderManager().initLoader(SEARCH_LOADER_ID, Bundle.EMPTY, this);
+        Toast.makeText(this, searchParameters.toString(), Toast.LENGTH_SHORT).show();
     }
 
     private void getData(String response) {
@@ -225,10 +181,13 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
             if (response.equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
             } else {
+                responseContainer = response;
+
                 TOTAL_COUNT = Integer.parseInt(new JSONObject(response).getString("total_count"));
                 CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
                 PER_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PER_PAGE));
-                LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ? TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
+                LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ?
+                        TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
 
                 if (TOTAL_COUNT > PER_PAGE) {
                     pageNavigator.setVisibility(View.VISIBLE);
@@ -251,7 +210,7 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
                     buttonLast.setClickable(false);
                 }
 
-                pageCounter.setText(CURRENT_PAGE + "/" + LAST_PAGE);
+                pageCounter.setText(" " + CURRENT_PAGE + "/" + LAST_PAGE + " ");
 
                 JSONArray repoArray = new JSONArray(new JSONObject(response).getString("items"));
                 List<HashMap<String, String>> repoList = new ArrayList<>();
@@ -304,5 +263,39 @@ public class SearchActivity extends AppCompatActivity implements LoaderManager.L
     @Override
     public void onLoaderReset(Loader<String> loader) {
         getLoaderManager().destroyLoader(loader.getId());
+    }
+
+    @Override
+    public void onClick(View view) {
+
+        CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
+        switch (view.getId()) {
+
+            case R.id.button_first:
+                searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
+                break;
+
+            case R.id.button_previous:
+                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE - 1));
+                break;
+
+            case R.id.button_next:
+                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE + 1));
+                break;
+
+            case R.id.button_last:
+                searchParameters.put(SearchLoader.PAGE, String.valueOf(LAST_PAGE));
+                break;
+
+            case R.id.go:
+                searchParameters = new HashMap<>();
+                searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
+                searchParameters.put(SearchLoader.PER_PAGE, "100");
+                InputMethodManager inputManager =
+                        (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                break;
+        }
+        search();
     }
 }
