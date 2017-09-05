@@ -1,9 +1,7 @@
-package com.alex.lighthub.activities;
+package com.alex.lighthub.views;
 
-import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
@@ -23,7 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
-import com.alex.lighthub.loaders.SearchLoader;
+import com.alex.lighthub.interfaces.Viewer;
+import com.alex.lighthub.presenters.SearchPresenter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,22 +33,22 @@ import java.util.HashMap;
 import java.util.List;
 
 public class SearchActivity extends AppCompatActivity
-        implements LoaderManager.LoaderCallbacks<String>, View.OnClickListener {
+        implements Viewer<String>, View.OnClickListener {
 
-    private Animation alphaAppear, scaleExpand;
+    private Animation alphaAppear, scaleExpand, scaleShrink;
     private ProgressBar searchProgress;
     private TextView nothingFound;
     private EditText searchQuery;
     private ListView searchResults;
     private LinearLayout pageNavigator;
     private TextView pageCounter;
-    private Button searchButton, buttonFirst, buttonPrevious, buttonNext, buttonLast;
-    private String responseContainer;
+    private Button buttonFirst, buttonPrevious, buttonNext, buttonLast;
     private static HashMap<String, String> searchParameters;
     private static final String STARS = "stars", FORKS = "forks", UPDATED = "updated";
-    private static final String ASCENDING = "asc", DESCENDING = "desc", CONTAINER = "cont";
+    private static final String ASCENDING = "asc", DESCENDING = "desc";
     private static int TOTAL_COUNT, PER_PAGE, CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
-    private static final int SEARCH_LOADER_ID = 1;
+    private static long BACK_PRESSED;
+    private static SearchPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +57,7 @@ public class SearchActivity extends AppCompatActivity
 
         alphaAppear = AnimationUtils.loadAnimation(this, R.anim.alpha);
         scaleExpand = AnimationUtils.loadAnimation(this, R.anim.scale_expand);
+        scaleShrink = AnimationUtils.loadAnimation(this, R.anim.scale_shrink);
 
         searchProgress = (ProgressBar) findViewById(R.id.search_progress);
         searchProgress.setVisibility(View.GONE);
@@ -73,8 +73,8 @@ public class SearchActivity extends AppCompatActivity
                 if ((keyEvent.getAction() == KeyEvent.ACTION_UP) &&
                         (keyCode == KeyEvent.KEYCODE_ENTER)) {
                     searchParameters = new HashMap<>();
-                    searchParameters.put(SearchLoader.PAGE, "1");
-                    searchParameters.put(SearchLoader.PER_PAGE, "100");
+                    searchParameters.put(SearchPresenter.PAGE, "1");
+                    searchParameters.put(SearchPresenter.PER_PAGE, "100");
                     search();
                     InputMethodManager inputManager =
                             (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -90,7 +90,7 @@ public class SearchActivity extends AppCompatActivity
         pageNavigator.setVisibility(View.GONE);
         pageCounter = (TextView) findViewById(R.id.page_counter);
 
-        searchButton = (Button) findViewById(R.id.go);
+        Button searchButton = (Button) findViewById(R.id.go);
         searchButton.setOnClickListener(this);
         buttonFirst = (Button) findViewById(R.id.button_first);
         buttonFirst.setOnClickListener(this);
@@ -102,12 +102,21 @@ public class SearchActivity extends AppCompatActivity
         buttonLast.setOnClickListener(this);
 
         searchParameters = new HashMap<>();
-        searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
-        searchParameters.put(SearchLoader.PER_PAGE, "100");
-        searchParameters.put(SearchLoader.SORT, "");
-        searchParameters.put(SearchLoader.ORDER, "");
+        searchParameters.put(SearchPresenter.PAGE, String.valueOf(FIRST_PAGE));
+        searchParameters.put(SearchPresenter.PER_PAGE, "100");
+        searchParameters.put(SearchPresenter.SORT, "");
+        searchParameters.put(SearchPresenter.ORDER, "");
 
-        search();
+        if (presenter == null) presenter =
+                new SearchPresenter(this, getString(R.string.git_search_url), "");
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        presenter.attachView(this);
+        presenter.refreshView();
     }
 
     @Override
@@ -121,43 +130,39 @@ public class SearchActivity extends AppCompatActivity
         switch (item.getItemId()) {
 
             case R.id.sort_stars_asc:
-                searchParameters.put(SearchLoader.SORT, STARS);
-                searchParameters.put(SearchLoader.ORDER, ASCENDING);
+                searchParameters.put(SearchPresenter.SORT, STARS);
+                searchParameters.put(SearchPresenter.ORDER, ASCENDING);
                 search();
                 return true;
 
             case R.id.sort_stars_desc:
-                searchParameters.put(SearchLoader.SORT, STARS);
-                searchParameters.put(SearchLoader.ORDER, DESCENDING);
+                searchParameters.put(SearchPresenter.SORT, STARS);
+                searchParameters.put(SearchPresenter.ORDER, DESCENDING);
                 search();
                 return true;
 
             case R.id.sort_forks_asc:
-                searchParameters.put(SearchLoader.SORT, FORKS);
-                searchParameters.put(SearchLoader.ORDER, ASCENDING);
+                searchParameters.put(SearchPresenter.SORT, FORKS);
+                searchParameters.put(SearchPresenter.ORDER, ASCENDING);
                 search();
                 return true;
 
             case R.id.sort_forks_desc:
-                searchParameters.put(SearchLoader.SORT, FORKS);
-                searchParameters.put(SearchLoader.ORDER, DESCENDING);
+                searchParameters.put(SearchPresenter.SORT, FORKS);
+                searchParameters.put(SearchPresenter.ORDER, DESCENDING);
                 search();
                 return true;
 
             case R.id.sort_updated_asc:
-                searchParameters.put(SearchLoader.SORT, UPDATED);
-                searchParameters.put(SearchLoader.ORDER, ASCENDING);
+                searchParameters.put(SearchPresenter.SORT, UPDATED);
+                searchParameters.put(SearchPresenter.ORDER, ASCENDING);
                 search();
                 return true;
 
             case R.id.sort_updated_desc:
-                searchParameters.put(SearchLoader.SORT, UPDATED);
-                searchParameters.put(SearchLoader.ORDER, DESCENDING);
+                searchParameters.put(SearchPresenter.SORT, UPDATED);
+                searchParameters.put(SearchPresenter.ORDER, DESCENDING);
                 search();
-                return true;
-
-            case R.id.exit:
-                finish();
                 return true;
 
             default:
@@ -166,26 +171,77 @@ public class SearchActivity extends AppCompatActivity
     }
 
     @Override
+    public void onClick(View view) {
+
+        CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PAGE));
+        switch (view.getId()) {
+
+            case R.id.button_first:
+                searchParameters.put(SearchPresenter.PAGE, String.valueOf(FIRST_PAGE));
+                break;
+
+            case R.id.button_previous:
+                searchParameters.put(SearchPresenter.PAGE, String.valueOf(CURRENT_PAGE - 1));
+                break;
+
+            case R.id.button_next:
+                searchParameters.put(SearchPresenter.PAGE, String.valueOf(CURRENT_PAGE + 1));
+                break;
+
+            case R.id.button_last:
+                searchParameters.put(SearchPresenter.PAGE, String.valueOf(LAST_PAGE));
+                break;
+
+            case R.id.go:
+                searchParameters = new HashMap<>();
+                searchParameters.put(SearchPresenter.PAGE, String.valueOf(FIRST_PAGE));
+                searchParameters.put(SearchPresenter.PER_PAGE, "100");
+                InputMethodManager inputManager =
+                        (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                break;
+        }
+        search();
+    }
+
+    @Override
     public void onBackPressed() {
-        startActivity(new Intent(this, MainActivity.class));
+        if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
+            presenter = null;
+            finish();
+        } else Toast.makeText(this, "Press back again to return", Toast.LENGTH_SHORT).show();
+        BACK_PRESSED = System.currentTimeMillis();
     }
 
     private void search() {
-        nothingFound.setVisibility(View.GONE);
-        getLoaderManager().initLoader(SEARCH_LOADER_ID, Bundle.EMPTY, this);
-        Toast.makeText(this, searchParameters.toString(), Toast.LENGTH_SHORT).show();
+        presenter.setParameters(searchQuery.getText().toString(), searchParameters);
+        presenter.loadData();
     }
 
-    private void getData(String response) {
+    @Override
+    public void showProgress() {
+        searchProgress.setVisibility(View.VISIBLE);
+        searchProgress.setAnimation(scaleExpand);
+    }
+
+    @Override
+    public void hideProgress() {
+        searchProgress.setAnimation(scaleShrink);
+        searchProgress.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void setView(String response) {
+        nothingFound.setVisibility(View.GONE);
         try {
             if (response.equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
+            } else if (response.equals(getString(R.string.internal_server_error))) {
+                Toast.makeText(this, getString(R.string.internal_server_error), Toast.LENGTH_SHORT).show();
             } else {
-                responseContainer = response;
-
                 TOTAL_COUNT = Integer.parseInt(new JSONObject(response).getString("total_count"));
-                CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
-                PER_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PER_PAGE));
+                CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PAGE));
+                PER_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PER_PAGE));
                 LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ?
                         TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
 
@@ -231,7 +287,7 @@ public class SearchActivity extends AppCompatActivity
                 if (repoList.isEmpty()) nothingFound.setVisibility(View.VISIBLE);
 
                 searchResults.setAdapter(new SimpleAdapter(
-                        SearchActivity.this,
+                        this,
                         repoList,
                         R.layout.list_item,
                         new String[]{"name", "description"},
@@ -240,62 +296,12 @@ public class SearchActivity extends AppCompatActivity
             }
         } catch (JSONException e) {
             Toast.makeText(this, e.toString() + e.getMessage(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            String stackTrace = "";
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace += "\n" + element;
+            }
+            Toast.makeText(this, e.toString() + "\n\n" + stackTrace, Toast.LENGTH_LONG).show();
         }
-    }
-
-    @Override
-    public Loader<String> onCreateLoader(int i, Bundle bundle) {
-        searchProgress.setVisibility(View.VISIBLE);
-        searchProgress.setAnimation(scaleExpand);
-        return new SearchLoader(this,
-                searchQuery.getText().toString(),
-                getString(R.string.git_search_url),
-                searchParameters);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<String> loader, String response) {
-        if (response != null) getData(response);
-        getLoaderManager().destroyLoader(loader.getId());
-        searchProgress.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<String> loader) {
-        getLoaderManager().destroyLoader(loader.getId());
-    }
-
-    @Override
-    public void onClick(View view) {
-
-        CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchLoader.PAGE));
-        switch (view.getId()) {
-
-            case R.id.button_first:
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
-                break;
-
-            case R.id.button_previous:
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE - 1));
-                break;
-
-            case R.id.button_next:
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(CURRENT_PAGE + 1));
-                break;
-
-            case R.id.button_last:
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(LAST_PAGE));
-                break;
-
-            case R.id.go:
-                searchParameters = new HashMap<>();
-                searchParameters.put(SearchLoader.PAGE, String.valueOf(FIRST_PAGE));
-                searchParameters.put(SearchLoader.PER_PAGE, "100");
-                InputMethodManager inputManager =
-                        (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                break;
-        }
-        search();
     }
 }

@@ -1,10 +1,8 @@
 package com.alex.lighthub.responses;
 
 import android.graphics.Bitmap;
-import android.os.Parcel;
-import android.os.Parcelable;
 
-public class Response implements Parcelable {
+public class Response {
 
     private Bitmap avatar;
     private String info;
@@ -16,36 +14,6 @@ public class Response implements Parcelable {
         this.repos = "";
         this.error = "";
     }
-
-    private Response(Parcel in) {
-        avatar = Bitmap.CREATOR.createFromParcel(in);
-        info = in.readString();
-        repos = in.readString();
-        error = in.readString();
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        avatar.writeToParcel(parcel, i);
-        parcel.writeString(info);
-        parcel.writeString(repos);
-        parcel.writeString(error);
-    }
-
-    public static final Parcelable.Creator<Response> CREATOR = new Parcelable.Creator<Response>() {
-        public Response createFromParcel(Parcel in) {
-            return new Response(in);
-        }
-
-        public Response[] newArray(int size) {
-            return new Response[size];
-        }
-    };
 
     public Bitmap getAvatar() {
         return avatar;

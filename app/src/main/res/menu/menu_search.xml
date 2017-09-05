@@ -19,8 +19,5 @@
     <item
         android:id="@+id/sort_updated_desc"
         android:title="@string/sort_updated_desc" />
-    <item
-        android:id="@+id/exit"
-        android:title="@string/button_exit" />
 
 </menu>

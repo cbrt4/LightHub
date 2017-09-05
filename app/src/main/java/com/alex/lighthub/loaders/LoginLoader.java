@@ -2,15 +2,15 @@ package com.alex.lighthub.loaders;
 
 import android.os.AsyncTask;
 
-import com.alex.lighthub.interfaces.Presenter;
-import com.alex.lighthub.util.SearchConnector;
+import com.alex.lighthub.presenters.LoginPresenter;
+import com.alex.lighthub.util.LoginConnector;
 
-public class SearchLoader extends AsyncTask<Void, Void, String> {
+public class LoginLoader extends AsyncTask<Void, Void, String> {
 
-    private Presenter<String> presenter;
+    private LoginPresenter presenter;
     private String url, credentials;
 
-    public SearchLoader(Presenter<String> presenter, String url, String credentials) {
+    public LoginLoader(LoginPresenter presenter, String url, String credentials) {
         this.presenter = presenter;
         this.url = url;
         this.credentials = credentials;
@@ -30,6 +30,6 @@ public class SearchLoader extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... voids) {
-        return new SearchConnector().getResponse(url, credentials);
+        return new LoginConnector().getResponse(url, credentials);
     }
 }

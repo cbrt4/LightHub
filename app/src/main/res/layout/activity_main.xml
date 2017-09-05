@@ -61,19 +61,6 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
 
-    <ListView
-        android:id="@+id/repos"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        android:divider="@null"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/location"
-        app:layout_constraintVertical_bias="1.0" />
-
     <FrameLayout
         android:id="@+id/avatar_frame"
         android:layout_width="0dip"
@@ -94,5 +81,54 @@
             android:paddingLeft="8dp"
             android:paddingRight="8dp" />
     </FrameLayout>
+
+    <ListView
+        android:id="@+id/repos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:divider="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/location"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <LinearLayout
+        android:id="@+id/unauthorized_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/button_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/prompt_login"
+            android:textAppearance="@style/TextAppearance.AppCompat" />
+
+        <TextView
+            android:id="@+id/page_counter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="  or  " />
+
+        <Button
+            android:id="@+id/button_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/button_search"
+            android:textAppearance="@style/TextAppearance.AppCompat" />
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

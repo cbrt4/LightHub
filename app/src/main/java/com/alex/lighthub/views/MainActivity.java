@@ -1,8 +1,6 @@
-package com.alex.lighthub.activities;
+package com.alex.lighthub.views;
 
-import android.app.LoaderManager;
 import android.content.Intent;
-import android.content.Loader;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -11,7 +9,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
@@ -19,7 +19,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
-import com.alex.lighthub.loaders.MainLoader;
+import com.alex.lighthub.interfaces.Viewer;
+import com.alex.lighthub.presenters.MainPresenter;
 import com.alex.lighthub.responses.Response;
 
 import org.json.JSONArray;
@@ -30,19 +31,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Response> {
+public class MainActivity extends AppCompatActivity implements Viewer<Response>, View.OnClickListener {
 
-    private Animation alphaAppear, scaleExpand;
+    private Animation alphaAppear, scaleExpand, scaleShrink;
     private ImageView avatar;
     private TextView name, login, location;
     private ListView repos;
     private ProgressBar loadingProgress;
+    private LinearLayout unauthorizedLayout;
     private String credentials;
-    private SharedPreferences sharedPrefs;
-    private Response responseContainer;
-    private static final String CONTAINER = "container";
     private static long BACK_PRESSED;
-    private static final int MAIN_LOADER_ID = 0;
+    private static MainPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         alphaAppear = AnimationUtils.loadAnimation(this, R.anim.alpha);
         scaleExpand = AnimationUtils.loadAnimation(this, R.anim.scale_expand);
+        scaleShrink = AnimationUtils.loadAnimation(this, R.anim.scale_shrink);
 
         avatar = (ImageView) findViewById(R.id.avatar);
         name = (TextView) findViewById(R.id.name);
@@ -61,10 +61,26 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         loadingProgress = (ProgressBar) findViewById(R.id.loading_progress);
         loadingProgress.setVisibility(View.GONE);
 
-        if (savedInstanceState != null && savedInstanceState.getParcelable(CONTAINER) != null) {
-            responseContainer = savedInstanceState.getParcelable(CONTAINER);
-            getData(responseContainer);
-        } else load();
+        unauthorizedLayout = (LinearLayout) findViewById(R.id.unauthorized_layout);
+        unauthorizedLayout.setVisibility(View.GONE);
+
+        Button loginButton = (Button) findViewById(R.id.button_login);
+        loginButton.setOnClickListener(this);
+        Button searchButton = (Button) findViewById(R.id.button_search);
+        searchButton.setOnClickListener(this);
+
+        if (presenter == null) {
+            getCredentials();
+            presenter = new MainPresenter(this, getString(R.string.git_main_url), credentials);
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        presenter.attachView(this);
+        presenter.refreshView();
     }
 
     @Override
@@ -85,10 +101,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 return true;
 
             case R.id.refresh:
-                startActivity(new Intent(this, MainActivity.class));
+                presenter.loadData();
                 return true;
 
             case R.id.exit:
+                presenter = null;
                 finish();
                 return true;
 
@@ -98,33 +115,63 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putParcelable(CONTAINER, responseContainer);
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.button_login:
+                startActivity(new Intent(this, LoginActivity.class));
+                presenter = null;
+                break;
+
+            case R.id.button_search:
+                startActivity(new Intent(this, SearchActivity.class));
+                break;
+        }
     }
 
     @Override
     public void onBackPressed() {
-        if (BACK_PRESSED + 2000 > System.currentTimeMillis()) finish();
-        else
-            Toast.makeText(getBaseContext(), "Press back again to exit", Toast.LENGTH_SHORT).show();
+        if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
+            presenter = null;
+            finish();
+        } else Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
         BACK_PRESSED = System.currentTimeMillis();
     }
 
-    private void load() {
-        getCredentials();
-        getLoaderManager().initLoader(MAIN_LOADER_ID, Bundle.EMPTY, this);
+    private void getCredentials() {
+        if (getIntent().getStringExtra("credentials") != null)
+            this.credentials = getIntent().getStringExtra("credentials");
+        else
+            this.credentials = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE)
+                .getString(getString(R.string.get_access), "");
     }
 
-    private void getData(Response response) {
+    private void logout() {
+        SharedPreferences.Editor editor =
+                getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE).edit();
+        editor.putString(getString(R.string.get_access), null).apply();
+    }
+
+    @Override
+    public void showProgress() {
+        loadingProgress.setVisibility(View.VISIBLE);
+        loadingProgress.setAnimation(scaleExpand);
+    }
+
+    @Override
+    public void hideProgress() {
+        loadingProgress.setAnimation(scaleShrink);
+        loadingProgress.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void setView(Response response) {
+        unauthorizedLayout.setVisibility(View.GONE);
         try {
-            if (response.getError().equals(getString(R.string.unauthorized)))
-                startActivity(new Intent(this, LoginActivity.class));
-            else if (response.getError().equals(getString(R.string.no_internet_connection))) {
+            if (response.getError().equals(getString(R.string.unauthorized))) {
+                unauthorizedLayout.setVisibility(View.VISIBLE);
+            } else if (response.getError().equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
             } else {
-                responseContainer = response;
-
                 JSONObject responseJSON = new JSONObject(response.getInfo());
 
                 name.setText(responseJSON.getString("name") != null ?
@@ -155,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 }
 
                 repos.setAdapter(new SimpleAdapter(
-                        MainActivity.this,
+                        this,
                         repoList,
                         R.layout.list_item,
                         new String[]{"name", "description"},
@@ -169,37 +216,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         } catch (JSONException e) {
             Toast.makeText(this, e.toString() + e.getMessage(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            String stackTrace = "";
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace += "\n" + element;
+            }
+            Toast.makeText(this, e.toString() + "\n\n" + stackTrace, Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void getCredentials() {
-        sharedPrefs = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE);
-        credentials = sharedPrefs.getString(getString(R.string.get_access), "");
-    }
-
-    private void logout() {
-        sharedPrefs = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(getString(R.string.get_access), null).apply();
-        load();
-    }
-
-    @Override
-    public Loader<Response> onCreateLoader(int i, Bundle bundle) {
-        loadingProgress.setVisibility(View.VISIBLE);
-        loadingProgress.setAnimation(scaleExpand);
-        return new MainLoader(this, credentials);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Response> loader, Response response) {
-        getData(response);
-        getLoaderManager().destroyLoader(loader.getId());
-        loadingProgress.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Response> loader) {
-        getLoaderManager().destroyLoader(loader.getId());
     }
 }

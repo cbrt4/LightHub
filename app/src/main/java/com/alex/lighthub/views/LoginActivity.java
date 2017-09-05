@@ -1,4 +1,4 @@
-package com.alex.lighthub.activities;
+package com.alex.lighthub.views;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,14 +11,23 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.alex.lighthub.R;
+import com.alex.lighthub.interfaces.Viewer;
+import com.alex.lighthub.presenters.LoginPresenter;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements Viewer<String> {
 
     private EditText loginView, passwordView;
+    private CheckBox stayLoggedIn;
+    private ProgressBar loginProgress;
+    private String login, password;
+    private static LoginPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +47,12 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        stayLoggedIn = (CheckBox) findViewById(R.id.stay_logged_in);
+        stayLoggedIn.setChecked(false);
+
+        loginProgress = (ProgressBar) findViewById(R.id.login_progress);
+        loginProgress.setVisibility(View.GONE);
+
         Button signIn = (Button) findViewById(R.id.sign_in);
         signIn.setOnClickListener(new OnClickListener() {
             @Override
@@ -47,10 +62,24 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        presenter.attachView(this);
+        presenter.refreshView();
+    }
+
+    @Override
+    public void onBackPressed() {
+        presenter = null;
+        finish();
+    }
+
     private void attemptLogin() {
 
-        String login = loginView.getText().toString();
-        String password = passwordView.getText().toString();
+        login = loginView.getText().toString();
+        password = passwordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -59,8 +88,7 @@ public class LoginActivity extends AppCompatActivity {
             passwordView.setError(getString(R.string.error_invalid_password));
             focusView = passwordView;
             cancel = true;
-        }
-        if (TextUtils.isEmpty(login)) {
+        } else if (TextUtils.isEmpty(login)) {
             loginView.setError(getString(R.string.error_field_required));
             focusView = loginView;
             cancel = true;
@@ -72,17 +100,21 @@ public class LoginActivity extends AppCompatActivity {
         if (cancel) {
             focusView.requestFocus();
         } else {
-            authenticate(login, password);
-            startActivity(new Intent(this, MainActivity.class));
+            if (presenter == null) presenter =
+                    new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
+            presenter.loadData();
         }
     }
 
-    private void authenticate(String login, String password) {
+    private String authenticate() {
         String authenticator = "Basic " + Base64.encodeToString((login + ":" + password).getBytes(),
                 Base64.NO_WRAP);
-        SharedPreferences.Editor editor =
-                getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE).edit();
-        editor.putString(getString(R.string.get_access), authenticator).apply();
+        if (stayLoggedIn.isChecked()) {
+            SharedPreferences.Editor editor =
+                    getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE).edit();
+            editor.putString(getString(R.string.get_access), authenticator).apply();
+        }
+        return authenticator;
     }
 
     private boolean isLoginValid(String login) {
@@ -91,5 +123,29 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean isPasswordValid(String password) {
         return password.length() > 4;
+    }
+
+    @Override
+    public void showProgress() {
+        loginProgress.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void hideProgress() {
+        loginProgress.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void setView(String response) {
+        if (response.equals("200")) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("credentials", authenticate());
+            startActivity(intent);
+            presenter = null;
+            finish();
+        } else if (response.equals(getString(R.string.no_internet_connection)))
+            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
+        else if (response.equals("401"))
+            Toast.makeText(this, getString(R.string.unauthorized), Toast.LENGTH_SHORT).show();
     }
 }

@@ -28,6 +28,7 @@
     <string name="sort_updated_desc">Sort by updated desc</string>
     <string name="nothing_found">Nothing found</string>
     <string name="no_internet_connection">No internet connection</string>
+    <string name="internal_server_error">Internal server error</string>
     <string name="unauthorized">Unauthorized</string>
     <string name="get_access">Authenticate</string>
     <string name="git_avatar">avatar_url</string>
@@ -40,4 +41,5 @@
     <string name="button_prev">Prev</string>
     <string name="button_next">Next</string>
     <string name="button_last">Last</string>
+    <string name="stay_logged_in">Stay Logged in</string>
 </resources>
