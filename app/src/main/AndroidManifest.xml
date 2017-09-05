@@ -11,8 +11,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/AppTheme">
-        <activity
-            android:name=".views.MainActivity">
+        <activity android:name=".views.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -25,7 +24,7 @@
         <activity
             android:name=".views.LoginActivity"
             android:label="@string/title_activity_login"
-            android:noHistory="true"/>
+            android:noHistory="true" />
     </application>
 
 </manifest>

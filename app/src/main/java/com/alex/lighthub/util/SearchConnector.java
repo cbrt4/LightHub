@@ -32,7 +32,7 @@ public class SearchConnector implements Connector<String> {
         } catch (UnknownHostException e) {
             return "No internet connection";
         } catch (IOException e) {
-            return "Internal server error";
+            return "";
         }
         return response;
     }

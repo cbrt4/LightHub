@@ -68,17 +68,16 @@ public class MainActivity extends AppCompatActivity implements Viewer<Response>,
         loginButton.setOnClickListener(this);
         Button searchButton = (Button) findViewById(R.id.button_search);
         searchButton.setOnClickListener(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         if (presenter == null) {
             getCredentials();
             presenter = new MainPresenter(this, getString(R.string.git_main_url), credentials);
         }
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-
         presenter.attachView(this);
         presenter.refreshView();
     }
@@ -102,11 +101,6 @@ public class MainActivity extends AppCompatActivity implements Viewer<Response>,
 
             case R.id.refresh:
                 presenter.loadData();
-                return true;
-
-            case R.id.exit:
-                presenter = null;
-                finish();
                 return true;
 
             default:
@@ -142,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements Viewer<Response>,
             this.credentials = getIntent().getStringExtra("credentials");
         else
             this.credentials = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE)
-                .getString(getString(R.string.get_access), "");
+                    .getString(getString(R.string.get_access), "");
     }
 
     private void logout() {
@@ -221,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements Viewer<Response>,
             for (StackTraceElement element : e.getStackTrace()) {
                 stackTrace += "\n" + element;
             }
-            Toast.makeText(this, e.toString() + "\n\n" + stackTrace, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, e.toString() + "\n" + stackTrace, Toast.LENGTH_LONG).show();
         }
     }
 }

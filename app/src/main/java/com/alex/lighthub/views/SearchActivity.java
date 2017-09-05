@@ -1,7 +1,6 @@
 package com.alex.lighthub.views;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
@@ -46,7 +45,7 @@ public class SearchActivity extends AppCompatActivity
     private static HashMap<String, String> searchParameters;
     private static final String STARS = "stars", FORKS = "forks", UPDATED = "updated";
     private static final String ASCENDING = "asc", DESCENDING = "desc";
-    private static int TOTAL_COUNT, PER_PAGE, CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
+    private static int CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
     private static long BACK_PRESSED;
     private static SearchPresenter presenter;
 
@@ -106,15 +105,14 @@ public class SearchActivity extends AppCompatActivity
         searchParameters.put(SearchPresenter.PER_PAGE, "100");
         searchParameters.put(SearchPresenter.SORT, "");
         searchParameters.put(SearchPresenter.ORDER, "");
-
-        if (presenter == null) presenter =
-                new SearchPresenter(this, getString(R.string.git_search_url), "");
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
+    protected void onResume() {
+        super.onResume();
 
+        if (presenter == null) presenter =
+                new SearchPresenter(this, getString(R.string.git_search_url), "");
         presenter.attachView(this);
         presenter.refreshView();
     }
@@ -236,12 +234,13 @@ public class SearchActivity extends AppCompatActivity
         try {
             if (response.equals(getString(R.string.no_internet_connection))) {
                 Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
-            } else if (response.equals(getString(R.string.internal_server_error))) {
-                Toast.makeText(this, getString(R.string.internal_server_error), Toast.LENGTH_SHORT).show();
+            } else if (response.equals("")) {
+                searchResults.setAdapter(null);
+                nothingFound.setVisibility(View.VISIBLE);
             } else {
-                TOTAL_COUNT = Integer.parseInt(new JSONObject(response).getString("total_count"));
+                int TOTAL_COUNT = Integer.parseInt(new JSONObject(response).getString("total_count"));
+                int PER_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PER_PAGE));
                 CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PAGE));
-                PER_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PER_PAGE));
                 LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ?
                         TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
 
@@ -301,7 +300,7 @@ public class SearchActivity extends AppCompatActivity
             for (StackTraceElement element : e.getStackTrace()) {
                 stackTrace += "\n" + element;
             }
-            Toast.makeText(this, e.toString() + "\n\n" + stackTrace, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, e.toString() + "\n" + stackTrace, Toast.LENGTH_LONG).show();
         }
     }
 }

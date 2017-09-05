@@ -27,6 +27,7 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
     private CheckBox stayLoggedIn;
     private ProgressBar loginProgress;
     private String login, password;
+    private static long BACK_PRESSED;
     private static LoginPresenter presenter;
 
     @Override
@@ -63,17 +64,22 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
+    protected void onResume() {
+        super.onResume();
 
+        if (presenter == null) presenter =
+                new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
         presenter.attachView(this);
         presenter.refreshView();
     }
 
     @Override
     public void onBackPressed() {
-        presenter = null;
-        finish();
+        if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
+            presenter = null;
+            finish();
+        } else Toast.makeText(this, "Press back again to return", Toast.LENGTH_SHORT).show();
+        BACK_PRESSED = System.currentTimeMillis();
     }
 
     private void attemptLogin() {
@@ -100,10 +106,10 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
         if (cancel) {
             focusView.requestFocus();
         } else {
-            if (presenter == null) presenter =
-                    new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
+            presenter = new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
             presenter.loadData();
         }
+        presenter = null;
     }
 
     private String authenticate() {
