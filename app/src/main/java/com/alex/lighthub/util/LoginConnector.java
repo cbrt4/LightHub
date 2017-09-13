@@ -10,7 +10,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class LoginConnector implements Connector<String> {
     @Override
-    public String getResponse(String url, String credentials) {
+    public String getModel(String url, String credentials) {
         String response;
 
         try {

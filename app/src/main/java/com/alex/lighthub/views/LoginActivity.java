@@ -61,16 +61,18 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
                 attemptLogin();
             }
         });
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+        Button search = (Button) findViewById(R.id.search);
+        search.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(LoginActivity.this, SearchActivity.class));
+            }
+        });
 
         if (presenter == null) presenter =
                 new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
         presenter.attachView(this);
-        presenter.refreshView();
     }
 
     @Override

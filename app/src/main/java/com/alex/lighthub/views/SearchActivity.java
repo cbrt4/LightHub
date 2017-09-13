@@ -1,6 +1,7 @@
 package com.alex.lighthub.views;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -21,18 +23,13 @@ import android.widget.Toast;
 
 import com.alex.lighthub.R;
 import com.alex.lighthub.interfaces.Viewer;
+import com.alex.lighthub.models.SearchModel;
 import com.alex.lighthub.presenters.SearchPresenter;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class SearchActivity extends AppCompatActivity
-        implements Viewer<String>, View.OnClickListener {
+        implements Viewer<SearchModel>, View.OnClickListener {
 
     private Animation alphaAppear, scaleExpand, scaleShrink;
     private ProgressBar searchProgress;
@@ -100,21 +97,11 @@ public class SearchActivity extends AppCompatActivity
         buttonLast = (Button) findViewById(R.id.button_last);
         buttonLast.setOnClickListener(this);
 
-        searchParameters = new HashMap<>();
-        searchParameters.put(SearchPresenter.PAGE, String.valueOf(FIRST_PAGE));
-        searchParameters.put(SearchPresenter.PER_PAGE, "100");
-        searchParameters.put(SearchPresenter.SORT, "");
-        searchParameters.put(SearchPresenter.ORDER, "");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
         if (presenter == null) presenter =
                 new SearchPresenter(this, getString(R.string.git_search_url), "");
         presenter.attachView(this);
-        presenter.refreshView();
+
+        searchParameters = presenter.getSearchParameters();
     }
 
     @Override
@@ -160,6 +147,12 @@ public class SearchActivity extends AppCompatActivity
             case R.id.sort_updated_desc:
                 searchParameters.put(SearchPresenter.SORT, UPDATED);
                 searchParameters.put(SearchPresenter.ORDER, DESCENDING);
+                search();
+                return true;
+
+            case R.id.reset_sorting:
+                searchParameters.put(SearchPresenter.SORT, "");
+                searchParameters.put(SearchPresenter.ORDER, "");
                 search();
                 return true;
 
@@ -229,78 +222,61 @@ public class SearchActivity extends AppCompatActivity
     }
 
     @Override
-    public void setView(String response) {
+    public void setView(SearchModel searchModel) {
         nothingFound.setVisibility(View.GONE);
-        try {
-            if (response.equals(getString(R.string.no_internet_connection))) {
-                Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
-            } else if (response.equals("")) {
-                searchResults.setAdapter(null);
-                nothingFound.setVisibility(View.VISIBLE);
+        if (searchModel.getError() != null) {
+            Toast.makeText(this, searchModel.getError(), Toast.LENGTH_SHORT).show();
+        } else if (searchModel.getResults().isEmpty()) {
+            searchResults.setAdapter(null);
+            nothingFound.setVisibility(View.VISIBLE);
+        } else {
+            searchParameters = presenter.getSearchParameters();
+            int TOTAL_COUNT = searchModel.getTotalCount();
+            int PER_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PER_PAGE));
+            CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PAGE));
+            LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ?
+                    TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
+
+            if (TOTAL_COUNT > PER_PAGE) {
+                pageNavigator.setVisibility(View.VISIBLE);
+                pageNavigator.setAnimation(alphaAppear);
+            } else pageNavigator.setVisibility(View.GONE);
+
+            if (CURRENT_PAGE > FIRST_PAGE) {
+                buttonFirst.setClickable(true);
+                buttonPrevious.setClickable(true);
             } else {
-                int TOTAL_COUNT = Integer.parseInt(new JSONObject(response).getString("total_count"));
-                int PER_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PER_PAGE));
-                CURRENT_PAGE = Integer.parseInt(searchParameters.get(SearchPresenter.PAGE));
-                LAST_PAGE = TOTAL_COUNT % PER_PAGE == 0 ?
-                        TOTAL_COUNT / PER_PAGE : TOTAL_COUNT / PER_PAGE + 1;
-
-                if (TOTAL_COUNT > PER_PAGE) {
-                    pageNavigator.setVisibility(View.VISIBLE);
-                    pageNavigator.setAnimation(alphaAppear);
-                } else pageNavigator.setVisibility(View.GONE);
-
-                if (CURRENT_PAGE > FIRST_PAGE) {
-                    buttonFirst.setClickable(true);
-                    buttonPrevious.setClickable(true);
-                } else {
-                    buttonFirst.setClickable(false);
-                    buttonPrevious.setClickable(false);
-                }
-
-                if (CURRENT_PAGE < LAST_PAGE) {
-                    buttonNext.setClickable(true);
-                    buttonLast.setClickable(true);
-                } else {
-                    buttonNext.setClickable(false);
-                    buttonLast.setClickable(false);
-                }
-
-                pageCounter.setText(" " + CURRENT_PAGE + "/" + LAST_PAGE + " ");
-
-                JSONArray repoArray = new JSONArray(new JSONObject(response).getString("items"));
-                List<HashMap<String, String>> repoList = new ArrayList<>();
-                JSONObject repository;
-                String name;
-                String description;
-                HashMap<String, String> repo;
-                for (int i = 0; i < repoArray.length(); i++) {
-                    repository = repoArray.getJSONObject(i);
-                    name = repository.getString("name");
-                    description = repository.getString("description");
-                    repo = new HashMap<>();
-                    repo.put("name", name);
-                    repo.put("description", description != null ? description : "");
-                    repoList.add(repo);
-                }
-
-                if (repoList.isEmpty()) nothingFound.setVisibility(View.VISIBLE);
-
-                searchResults.setAdapter(new SimpleAdapter(
-                        this,
-                        repoList,
-                        R.layout.list_item,
-                        new String[]{"name", "description"},
-                        new int[]{R.id.repo_name, R.id.repo_description}));
-                searchResults.setAnimation(alphaAppear);
+                buttonFirst.setClickable(false);
+                buttonPrevious.setClickable(false);
             }
-        } catch (JSONException e) {
-            Toast.makeText(this, e.toString() + e.getMessage(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            String stackTrace = "";
-            for (StackTraceElement element : e.getStackTrace()) {
-                stackTrace += "\n" + element;
+
+            if (CURRENT_PAGE < LAST_PAGE) {
+                buttonNext.setClickable(true);
+                buttonLast.setClickable(true);
+            } else {
+                buttonNext.setClickable(false);
+                buttonLast.setClickable(false);
             }
-            Toast.makeText(this, e.toString() + "\n" + stackTrace, Toast.LENGTH_LONG).show();
+
+            pageCounter.setText(" " + CURRENT_PAGE + "/" + LAST_PAGE + " ");
+
+            searchResults.setAdapter(new SimpleAdapter(
+                    this,
+                    searchModel.getResults(),
+                    R.layout.list_item,
+                    new String[]{"name", "description"},
+                    new int[]{R.id.repo_name, R.id.repo_description}));
+            searchResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    TextView repoName = view.findViewById(R.id.repo_name);
+                    String repoNameString = repoName.getText().toString();
+                    Intent intent = new Intent(SearchActivity.this, RepoActivity.class);
+                    intent.putExtra("name", repoNameString);
+                    startActivity(intent);
+                }
+            });
+            searchResults.setAnimation(alphaAppear);
         }
     }
 }

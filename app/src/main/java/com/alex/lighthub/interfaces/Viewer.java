@@ -6,6 +6,5 @@ public interface Viewer<T> {
 
     void hideProgress();
 
-    void setView(T response);
-
+    void setView(T view);
 }

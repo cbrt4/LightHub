@@ -9,6 +9,4 @@ public interface Presenter<T> {
     void loadData();
 
     void attachView(Viewer<T> viewer);
-
-    void refreshView();
 }

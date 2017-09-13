@@ -3,62 +3,82 @@ package com.alex.lighthub.util;
 import android.graphics.BitmapFactory;
 
 import com.alex.lighthub.interfaces.Connector;
-import com.alex.lighthub.responses.Response;
+import com.alex.lighthub.models.MainModel;
 
-import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class MainConnector implements Connector<Response> {
+public class MainConnector implements Connector<MainModel> {
 
     @Override
-    public Response getResponse(String url, String credentials) {
+    public MainModel getModel(String url, String credentials) {
 
-        Response response = new Response();
+        MainModel mainModel = new MainModel();
 
         try {
             HttpsURLConnection connection =
                     (HttpsURLConnection) new URL(url).openConnection();
             connection.setRequestProperty("Authorization", credentials);
 
-            String resp = "", temp;
+            String temp = "", line;
             BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            while ((temp = reader.readLine()) != null) {
-                resp += temp;
+            while ((line = reader.readLine()) != null) {
+                temp += line;
             }
-            response.setInfo(resp);
-            JSONObject json = new JSONObject(resp);
-            resp = "";
+            JSONObject json = new JSONObject(temp);
             connection.disconnect();
             reader.close();
+
+            mainModel.setName(json.getString("name"));
+            mainModel.setLogin(json.getString("login"));
+            mainModel.setLocation(json.getString("location"));
 
             connection = (HttpsURLConnection) new URL(json.getString("repos_url")).openConnection();
             connection.setRequestProperty("Authorization", credentials);
+            temp = "";
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            while ((temp = reader.readLine()) != null) {
-                resp += temp;
+            while ((line = reader.readLine()) != null) {
+                temp += line;
             }
-            response.setRepos(resp);
+            JSONArray repoArray = new JSONArray(temp);
             connection.disconnect();
             reader.close();
 
+            List<HashMap<String, String>> repoList = new ArrayList<>();
+            JSONObject repository;
+            String name;
+            String description;
+            HashMap<String, String> repo;
+            for (int i = 0; i < repoArray.length(); i++) {
+                repository = repoArray.getJSONObject(i);
+                name = repository.getString("name");
+                description = repository.getString("description");
+                repo = new HashMap<>();
+                repo.put("name", name);
+                repo.put("description", description != null ? description : "");
+                repoList.add(repo);
+            }
+            mainModel.setRepos(repoList);
+
             connection = (HttpsURLConnection) new URL(json.getString("avatar_url")).openConnection();
-            response.setAvatar(BitmapFactory.decodeStream(connection.getInputStream()));
+            mainModel.setAvatar(BitmapFactory.decodeStream(connection.getInputStream()));
             connection.disconnect();
-        } catch (JSONException e) {
-            response.setError(e.toString() + e.getMessage());
-        } catch (UnknownHostException e) {
-            response.setError("No internet connection");
-        } catch (IOException e) {
-            response.setError("Unauthorized");
+        } catch (Exception e) {
+            String stackTrace = "";
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace += "\n" + element;
+            }
+            mainModel.setError(e.toString() + "\n" + stackTrace);
         }
-        return response;
+        return mainModel;
     }
 }

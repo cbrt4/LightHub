@@ -3,16 +3,16 @@ package com.alex.lighthub.presenters;
 import com.alex.lighthub.interfaces.Presenter;
 import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.loaders.MainLoader;
-import com.alex.lighthub.responses.Response;
+import com.alex.lighthub.models.MainModel;
 
-public class MainPresenter implements Presenter<Response> {
+public class MainPresenter implements Presenter<MainModel> {
 
-    private Viewer<Response> viewer;
-    private Response response;
+    private Viewer<MainModel> viewer;
+    private MainModel mainModel;
     private boolean isLoading;
     private String url, credentials;
 
-    public MainPresenter(Viewer<Response> viewer, String url, String credentials) {
+    public MainPresenter(Viewer<MainModel> viewer, String url, String credentials) {
         this.viewer = viewer;
         this.url = url;
         this.credentials = credentials;
@@ -26,11 +26,11 @@ public class MainPresenter implements Presenter<Response> {
     }
 
     @Override
-    public void onLoadFinished(Response result) {
+    public void onLoadFinished(MainModel result) {
         isLoading = false;
-        response = result;
+        mainModel = result;
         viewer.hideProgress();
-        viewer.setView(response);
+        viewer.setView(result);
     }
 
     @Override
@@ -39,16 +39,12 @@ public class MainPresenter implements Presenter<Response> {
     }
 
     @Override
-    public void attachView(Viewer<Response> viewer) {
+    public void attachView(Viewer<MainModel> viewer) {
         this.viewer = viewer;
-    }
-
-    @Override
-    public void refreshView() {
-        if (isLoading) viewer.showProgress();
+        if (isLoading) this.viewer.showProgress();
         else {
-            viewer.hideProgress();
-            if (response != null) viewer.setView(response);
+            this.viewer.hideProgress();
+            if (mainModel != null) this.viewer.setView(mainModel);
         }
     }
 }

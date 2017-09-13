@@ -26,6 +26,7 @@
     <string name="sort_forks_desc">Sort by forks desc</string>
     <string name="sort_updated_asc">Sort by updated asc</string>
     <string name="sort_updated_desc">Sort by updated desc</string>
+    <string name="reset_sorting">Reset sorting</string>
     <string name="nothing_found">Nothing found</string>
     <string name="no_internet_connection">No internet connection</string>
     <string name="internal_server_error">Internal server error</string>

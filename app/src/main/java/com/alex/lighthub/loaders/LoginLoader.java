@@ -30,6 +30,6 @@ public class LoginLoader extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... voids) {
-        return new LoginConnector().getResponse(url, credentials);
+        return new LoginConnector().getModel(url, credentials);
     }
 }

@@ -3,10 +3,10 @@ package com.alex.lighthub.loaders;
 import android.os.AsyncTask;
 
 import com.alex.lighthub.presenters.MainPresenter;
-import com.alex.lighthub.responses.Response;
+import com.alex.lighthub.models.MainModel;
 import com.alex.lighthub.util.MainConnector;
 
-public class MainLoader extends AsyncTask<Void, Void, Response> {
+public class MainLoader extends AsyncTask<Void, Void, MainModel> {
 
     private MainPresenter presenter;
     private String url, credentials;
@@ -24,13 +24,13 @@ public class MainLoader extends AsyncTask<Void, Void, Response> {
     }
 
     @Override
-    protected void onPostExecute(Response response) {
-        super.onPostExecute(response);
-        presenter.onLoadFinished(response);
+    protected void onPostExecute(MainModel mainModel) {
+        super.onPostExecute(mainModel);
+        presenter.onLoadFinished(mainModel);
     }
 
     @Override
-    protected Response doInBackground(Void... voids) {
-        return new MainConnector().getResponse(url, credentials);
+    protected MainModel doInBackground(Void... voids) {
+        return new MainConnector().getModel(url, credentials);
     }
 }

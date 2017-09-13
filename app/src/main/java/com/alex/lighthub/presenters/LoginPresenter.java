@@ -39,14 +39,10 @@ public class LoginPresenter implements Presenter<String> {
     @Override
     public void attachView(Viewer<String> viewer) {
         this.viewer = viewer;
-    }
-
-    @Override
-    public void refreshView() {
-        if (isLoading) viewer.showProgress();
+        if (isLoading) this.viewer.showProgress();
         else {
-            viewer.hideProgress();
-            if (response != null) viewer.setView(response);
+            this.viewer.hideProgress();
+            if (response != null) this.viewer.setView(response);
         }
     }
 }
