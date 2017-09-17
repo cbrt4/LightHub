@@ -44,6 +44,7 @@ public class SearchActivity extends AppCompatActivity
     private static final String ASCENDING = "asc", DESCENDING = "desc";
     private static int CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
     private static long BACK_PRESSED;
+    private String credentials;
     private static SearchPresenter presenter;
 
     @Override
@@ -97,8 +98,10 @@ public class SearchActivity extends AppCompatActivity
         buttonLast = (Button) findViewById(R.id.button_last);
         buttonLast.setOnClickListener(this);
 
-        if (presenter == null) presenter =
-                new SearchPresenter(this, getString(R.string.git_search_url), "");
+        if (presenter == null) {
+            getCredentials();
+            presenter = new SearchPresenter(this, getString(R.string.git_search_url), credentials);
+        }
         presenter.attachView(this);
 
         searchParameters = presenter.getSearchParameters();
@@ -198,10 +201,17 @@ public class SearchActivity extends AppCompatActivity
     @Override
     public void onBackPressed() {
         if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
-            presenter = null;
             finish();
         } else Toast.makeText(this, "Press back again to return", Toast.LENGTH_SHORT).show();
         BACK_PRESSED = System.currentTimeMillis();
+    }
+
+    private void getCredentials() {
+        if (getIntent().getStringExtra("credentials") != null)
+            this.credentials = getIntent().getStringExtra("credentials");
+        else
+            this.credentials = getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE)
+                    .getString(getString(R.string.get_access), "");
     }
 
     private void search() {
@@ -226,7 +236,8 @@ public class SearchActivity extends AppCompatActivity
         nothingFound.setVisibility(View.GONE);
         if (searchModel.getError() != null) {
             Toast.makeText(this, searchModel.getError(), Toast.LENGTH_SHORT).show();
-        } else if (searchModel.getResults().isEmpty()) {
+        } else if (searchModel.getResults() == null ||
+                searchModel.getResults() != null && searchModel.getResults().isEmpty()) {
             searchResults.setAdapter(null);
             nothingFound.setVisibility(View.VISIBLE);
         } else {
@@ -263,17 +274,19 @@ public class SearchActivity extends AppCompatActivity
             searchResults.setAdapter(new SimpleAdapter(
                     this,
                     searchModel.getResults(),
-                    R.layout.list_item,
-                    new String[]{"name", "description"},
-                    new int[]{R.id.repo_name, R.id.repo_description}));
+                    R.layout.list_item_repo,
+                    new String[]{"name", "description", "contents_url"},
+                    new int[]{R.id.repo_name, R.id.repo_description, R.id.contents_url}));
             searchResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    TextView contentsUrl = view.findViewById(R.id.contents_url);
                     TextView repoName = view.findViewById(R.id.repo_name);
-                    String repoNameString = repoName.getText().toString();
-                    Intent intent = new Intent(SearchActivity.this, RepoActivity.class);
-                    intent.putExtra("name", repoNameString);
-                    startActivity(intent);
+                    Intent contentsIntent = new Intent(SearchActivity.this, ContentsActivity.class);
+                    contentsIntent.putExtra("contents_url", contentsUrl.getText().toString());
+                    contentsIntent.putExtra("name", repoName.getText().toString());
+                    contentsIntent.putExtra("credentials", credentials);
+                    startActivity(contentsIntent);
                 }
             });
             searchResults.setAnimation(alphaAppear);

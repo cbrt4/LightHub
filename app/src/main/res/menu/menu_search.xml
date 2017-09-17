@@ -12,7 +12,7 @@
         android:title="@string/sort_forks_asc" />
     <item
         android:id="@+id/sort_forks_desc"
-        android:title="@string/sort_stars_desc" />
+        android:title="@string/sort_forks_desc" />
     <item
         android:id="@+id/sort_updated_asc"
         android:title="@string/sort_updated_asc" />

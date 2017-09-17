@@ -22,6 +22,9 @@ import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.models.MainModel;
 import com.alex.lighthub.presenters.MainPresenter;
 
+import java.util.ArrayList;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity implements Viewer<MainModel> {
 
     private Animation alphaAppear, scaleExpand, scaleShrink;
@@ -29,8 +32,8 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
     private TextView name, login, location;
     private ListView repos;
     private ProgressBar loadingProgress;
-    private String credentials;
     private static long BACK_PRESSED;
+    private String credentials;
     private static MainPresenter presenter;
 
     @Override
@@ -72,7 +75,9 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
                 return true;
 
             case R.id.search:
-                startActivity(new Intent(this, SearchActivity.class));
+                Intent searchIntent = new Intent(this, SearchActivity.class);
+                searchIntent.putExtra("credentials", credentials);
+                startActivity(searchIntent);
                 return true;
 
             case R.id.refresh:
@@ -87,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
     @Override
     public void onBackPressed() {
         if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
-            presenter = null;
             finish();
         } else Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
         BACK_PRESSED = System.currentTimeMillis();
@@ -128,7 +132,8 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
                     mainModel.getName() : "");
             name.setAnimation(alphaAppear);
 
-            login.setText(mainModel.getLogin());
+            login.setText(mainModel.getLogin() != null ?
+                    mainModel.getLogin() : "");
             login.setAnimation(alphaAppear);
 
             location.setText(mainModel.getLocation() != null ?
@@ -137,18 +142,20 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
 
             repos.setAdapter(new SimpleAdapter(
                     this,
-                    mainModel.getRepos(),
-                    R.layout.list_item,
-                    new String[]{"name", "description"},
-                    new int[]{R.id.repo_name, R.id.repo_description}));
+                    mainModel.getRepos() != null ? mainModel.getRepos() : new ArrayList<Map<String, ?>>(),
+                    R.layout.list_item_repo,
+                    new String[]{"name", "description", "contents_url"},
+                    new int[]{R.id.repo_name, R.id.repo_description, R.id.contents_url}));
             repos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    TextView contentsUrl = view.findViewById(R.id.contents_url);
                     TextView repoName = view.findViewById(R.id.repo_name);
-                    String repoNameString = repoName.getText().toString();
-                    Intent intent = new Intent(MainActivity.this, RepoActivity.class);
-                    intent.putExtra("name", repoNameString);
-                    startActivity(intent);
+                    Intent contentsIntent = new Intent(MainActivity.this, ContentsActivity.class);
+                    contentsIntent.putExtra("contents_url", contentsUrl.getText().toString());
+                    contentsIntent.putExtra("name", repoName.getText().toString());
+                    contentsIntent.putExtra("credentials", credentials);
+                    startActivity(contentsIntent);
                 }
             });
             repos.setAnimation(alphaAppear);

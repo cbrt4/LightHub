@@ -6,11 +6,14 @@ import com.alex.lighthub.interfaces.Connector;
 import com.alex.lighthub.models.MainModel;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,22 +52,23 @@ public class MainConnector implements Connector<MainModel> {
             while ((line = reader.readLine()) != null) {
                 temp += line;
             }
-            JSONArray repoArray = new JSONArray(temp);
             connection.disconnect();
             reader.close();
 
+            JSONArray repoArray = new JSONArray(temp);
             List<HashMap<String, String>> repoList = new ArrayList<>();
             JSONObject repository;
-            String name;
-            String description;
+            String repoName, repoDescription, contentsUrl;
             HashMap<String, String> repo;
             for (int i = 0; i < repoArray.length(); i++) {
                 repository = repoArray.getJSONObject(i);
-                name = repository.getString("name");
-                description = repository.getString("description");
+                repoName = repository.getString("name");
+                repoDescription = repository.getString("description");
+                contentsUrl = repository.getString("contents_url").replace("{+path}", "");
                 repo = new HashMap<>();
-                repo.put("name", name);
-                repo.put("description", description != null ? description : "");
+                repo.put("name", repoName);
+                repo.put("description", repoDescription != null ? repoDescription : "");
+                repo.put("contents_url", contentsUrl);
                 repoList.add(repo);
             }
             mainModel.setRepos(repoList);
@@ -72,13 +76,24 @@ public class MainConnector implements Connector<MainModel> {
             connection = (HttpsURLConnection) new URL(json.getString("avatar_url")).openConnection();
             mainModel.setAvatar(BitmapFactory.decodeStream(connection.getInputStream()));
             connection.disconnect();
-        } catch (Exception e) {
+        } catch (UnknownHostException e) {
+            mainModel.setError("No internet connection");
+        } catch (IOException e) {
+            mainModel.setError("Unauthorized");
+        } catch (JSONException e) {
+            String stackTrace = "";
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace += "\n" + element;
+            }
+            mainModel.setError(e.toString().substring(0, e.toString().indexOf(":")) + "\n" + stackTrace);
+        }
+        /*catch (Exception e) {
             String stackTrace = "";
             for (StackTraceElement element : e.getStackTrace()) {
                 stackTrace += "\n" + element;
             }
             mainModel.setError(e.toString() + "\n" + stackTrace);
-        }
+        }*/
         return mainModel;
     }
 }
