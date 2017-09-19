@@ -1,5 +1,6 @@
 package com.alex.lighthub.views;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -39,11 +40,10 @@ public class ContentsActivity extends AppCompatActivity implements Viewer<Conten
         loadingProgress = (ProgressBar) findViewById(R.id.contents_progress);
         loadingProgress.setVisibility(View.GONE);
 
-        TextView title = (TextView) findViewById(R.id.title);
         contentsList = (ListView) findViewById(R.id.contents_list);
 
-        if (getIntent().getStringExtra("name") != null) {
-            title.setText(getIntent().getStringExtra("name"));
+        if (getIntent().getStringExtra("name") != null && getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(getIntent().getStringExtra("name"));
         }
         if (getIntent().getStringExtra("contents_url") != null) {
             getCredentials();
@@ -52,6 +52,7 @@ public class ContentsActivity extends AppCompatActivity implements Viewer<Conten
         } else {
             Toast.makeText(this, "No repo url in this intent", Toast.LENGTH_SHORT).show();
         }
+        presenter.attachView(this);
     }
 
     @Override
@@ -81,9 +82,18 @@ public class ContentsActivity extends AppCompatActivity implements Viewer<Conten
 
     @Override
     public void setView(ContentsModel contentsModel) {
-        if (contentsModel.getError() != null)
-            Toast.makeText(this, contentsModel.getError(), Toast.LENGTH_LONG).show();
-        else {
+        if (contentsModel.getError() != null) {
+            Toast.makeText(this, contentsModel.getError(), Toast.LENGTH_SHORT).show();
+            presenter.back();
+        }
+        else if (contentsModel.getCodeContent() != null) {
+            Intent viewIntent = new Intent(this, CodeViewActivity.class);
+            viewIntent.putExtra("name", contentsModel.getCodeContentName());
+            viewIntent.putExtra("lines", contentsModel.getLines());
+            viewIntent.putExtra("content", contentsModel.getCodeContent());
+            startActivity(viewIntent);
+            presenter.back();
+        } else {
             for (Map<String, String> content : contentsModel.getContents()) {
                 if (content.get("type").equals("file"))
                     content.put("type", String.valueOf(R.drawable.file_black_24dp));

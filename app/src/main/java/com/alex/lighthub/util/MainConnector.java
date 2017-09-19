@@ -6,7 +6,6 @@ import com.alex.lighthub.interfaces.Connector;
 import com.alex.lighthub.models.MainModel;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -80,20 +79,13 @@ public class MainConnector implements Connector<MainModel> {
             mainModel.setError("No internet connection");
         } catch (IOException e) {
             mainModel.setError("Unauthorized");
-        } catch (JSONException e) {
+        } catch (Exception e) {
             String stackTrace = "";
             for (StackTraceElement element : e.getStackTrace()) {
                 stackTrace += "\n" + element;
             }
             mainModel.setError(e.toString().substring(0, e.toString().indexOf(":")) + "\n" + stackTrace);
         }
-        /*catch (Exception e) {
-            String stackTrace = "";
-            for (StackTraceElement element : e.getStackTrace()) {
-                stackTrace += "\n" + element;
-            }
-            mainModel.setError(e.toString() + "\n" + stackTrace);
-        }*/
         return mainModel;
     }
 }
