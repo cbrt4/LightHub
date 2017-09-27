@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
+import com.alex.lighthub.application.MainApp;
 import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.models.ContentsModel;
 import com.alex.lighthub.presenters.ContentsPresenter;
@@ -26,7 +27,7 @@ public class ContentsActivity extends AppCompatActivity implements Viewer<Conten
     private Animation alphaAppear, scaleExpand, scaleShrink;
     private ProgressBar loadingProgress;
     private String credentials;
-    private static ContentsPresenter presenter;
+    private ContentsPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,7 @@ public class ContentsActivity extends AppCompatActivity implements Viewer<Conten
         }
         if (getIntent().getStringExtra("contents_url") != null) {
             getCredentials();
-            presenter = new ContentsPresenter(this, getIntent().getStringExtra("contents_url"), credentials);
+            presenter = MainApp.getContentsPresenter(this, getIntent().getStringExtra("contents_url"), credentials);
             presenter.attachView(this);
         } else {
             Toast.makeText(this, "No repo url in this intent", Toast.LENGTH_SHORT).show();

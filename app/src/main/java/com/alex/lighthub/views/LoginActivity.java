@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
+import com.alex.lighthub.application.MainApp;
 import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.presenters.LoginPresenter;
 
@@ -28,7 +29,7 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
     private ProgressBar loginProgress;
     private String login, password;
     private static long BACK_PRESSED;
-    private static LoginPresenter presenter;
+    private LoginPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +71,7 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
             }
         });
 
-        if (presenter == null) presenter =
-                new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
+        presenter = MainApp.getLoginPresenter(this, getString(R.string.git_main_url), authenticate());
         presenter.attachView(this);
     }
 
@@ -108,7 +108,7 @@ public class LoginActivity extends AppCompatActivity implements Viewer<String> {
         if (cancel) {
             focusView.requestFocus();
         } else {
-            presenter = new LoginPresenter(this, getString(R.string.git_main_url), authenticate());
+            presenter = MainApp.getLoginPresenter(this, getString(R.string.git_main_url), authenticate());
             presenter.loadData();
         }
         presenter = null;

@@ -18,9 +18,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
+import com.alex.lighthub.application.MainApp;
 import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.models.MainModel;
 import com.alex.lighthub.presenters.MainPresenter;
+import com.alex.lighthub.util.Starter;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -34,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
     private ProgressBar loadingProgress;
     private static long BACK_PRESSED;
     private String credentials;
-    private static MainPresenter presenter;
+    private MainPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +56,10 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
         loadingProgress = (ProgressBar) findViewById(R.id.loading_progress);
         loadingProgress.setVisibility(View.GONE);
 
-        if (presenter == null) {
-            getCredentials();
-            presenter = new MainPresenter(this, getString(R.string.git_main_url), credentials);
-        }
+        getCredentials();
+        presenter = MainApp.getMainPresenter(this, getString(R.string.git_main_url), credentials);
         presenter.attachView(this);
+
     }
 
     @Override
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
     @Override
     public void onBackPressed() {
         if (BACK_PRESSED + 2000 > System.currentTimeMillis()) {
+            presenter = null;
             finish();
         } else Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
         BACK_PRESSED = System.currentTimeMillis();
@@ -109,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
         SharedPreferences.Editor editor =
                 getSharedPreferences(getString(R.string.get_access), MODE_PRIVATE).edit();
         editor.putString(getString(R.string.get_access), null).apply();
+        startActivity(new Intent(this, Starter.class));
     }
 
     @Override
@@ -125,9 +128,9 @@ public class MainActivity extends AppCompatActivity implements Viewer<MainModel>
 
     @Override
     public void setView(MainModel mainModel) {
-        if (mainModel.getError() != null) {
+        if (mainModel.getError() != null)
             Toast.makeText(this, mainModel.getError(), Toast.LENGTH_SHORT).show();
-        } else {
+        else {
             name.setText(mainModel.getName() != null ?
                     mainModel.getName() : "");
             name.setAnimation(alphaAppear);

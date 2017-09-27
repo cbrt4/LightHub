@@ -22,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.lighthub.R;
+import com.alex.lighthub.application.MainApp;
 import com.alex.lighthub.interfaces.Viewer;
 import com.alex.lighthub.models.SearchModel;
 import com.alex.lighthub.presenters.SearchPresenter;
@@ -45,7 +46,7 @@ public class SearchActivity extends AppCompatActivity
     private static int CURRENT_PAGE, LAST_PAGE, FIRST_PAGE = 1;
     private static long BACK_PRESSED;
     private String credentials;
-    private static SearchPresenter presenter;
+    private SearchPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,10 +99,8 @@ public class SearchActivity extends AppCompatActivity
         buttonLast = (Button) findViewById(R.id.button_last);
         buttonLast.setOnClickListener(this);
 
-        if (presenter == null) {
-            getCredentials();
-            presenter = new SearchPresenter(this, getString(R.string.git_search_url), credentials);
-        }
+        getCredentials();
+        presenter = MainApp.getSearchPresenter(this, getString(R.string.git_search_url), credentials);
         presenter.attachView(this);
 
         searchParameters = presenter.getSearchParameters();
